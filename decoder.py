@@ -6,6 +6,7 @@ import sys
 import cv2
 import numpy as np
 from pylibdmtx import pylibdmtx
+from tabulate import tabulate
 
 class DataMatrixDecoder:
     def __init__(self, machine_type: str, enable_cv_show: bool = False, morphology_kernel_size: tuple = (3, 3),
@@ -140,6 +141,26 @@ class DataMatrixDecoder:
         for img_path in image_files:
             img_name = os.path.basename(img_path)
             images[img_name] = img_path
-
-        self.logger.info(f"Found {len(images)} images.")
         return images
+
+    def decode_images(self, image_path: str):
+        images = self._fetch_images(image_path)
+        if images is None:
+            return
+
+        decodes = {}
+        self.logger.info(f"\n{':'* 10 } Found {len(images)} images to decode {':'* 10 }")
+        
+        self.logger.info(f"\n{'='* 60 }") 
+        for img_name, img_path in images.items():
+            self.logger.info(f"Decoding image: {img_name}")
+            decoded_data = self._get_datamatrix_data(img_path, img_name)
+            if decoded_data:
+                self.logger.info(f"Decoded DataMatrix of {img_name} successfully.")
+                decodes[img_name] = decoded_data
+        self.logger.info(f"\n{'='* 60 }") 
+        
+        self.logger.info(f"\n{'*'* 25 } RESULTS {'*'* 25 }\n")
+        rows = list(decodes.items())
+        self.logger.info(tabulate(rows, headers=["Filename", "Decoded Data"], tablefmt="grid"))
+        self.logger.info(f"\n{'*'* 60}")
