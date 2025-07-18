@@ -11,7 +11,7 @@ class DataMatrixDecoder:
     def __init__(self, machine_type: str, enable_cv_show: bool = True, morphology_kernel_size: tuple = (3, 3),
                  gaussian_blur_kernel_size: tuple = (7, 7), gaussian_blur_sigma: int = 5,
                  threshold_value: int = 0, threshold_max_value: int = 255,
-                 cv_show_wait_time: int = 1000):
+                 cv_show_wait_time: int = 500):
 
         self.compatible_image_formats = ['.png', '.jpg', '.jpeg']
         self.logger = self._setup_logger()
