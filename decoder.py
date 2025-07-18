@@ -1,4 +1,3 @@
-import glob
 import os
 import logging
 from logging import getLogger, DEBUG, StreamHandler
@@ -9,10 +8,10 @@ from pylibdmtx import pylibdmtx
 from tabulate import tabulate
 
 class DataMatrixDecoder:
-    def __init__(self, machine_type: str, enable_cv_show: bool = False, morphology_kernel_size: tuple = (3, 3),
+    def __init__(self, machine_type: str, enable_cv_show: bool = True, morphology_kernel_size: tuple = (3, 3),
                  gaussian_blur_kernel_size: tuple = (7, 7), gaussian_blur_sigma: int = 5,
                  threshold_value: int = 0, threshold_max_value: int = 255,
-                 cv_show_wait_time: int = 5000):
+                 cv_show_wait_time: int = 1000):
 
         self.compatible_image_formats = ['.png', '.jpg', '.jpeg']
         self.logger = self._setup_logger()
@@ -128,20 +127,18 @@ class DataMatrixDecoder:
         return decoded_objects[0].data.decode("utf-8")
     
     def _fetch_images(self, image_path: str):
-        image_files = []
-        for ext in self.compatible_image_formats:
-            image_files.extend(glob.glob(os.path.join(image_path, ext)))
+        image_files = {}
+        for filename in os.listdir(image_path):
+            ext = os.path.splitext(filename)[1].lower()
+            if ext in self.compatible_image_formats:
+                full_path = os.path.join(image_path, filename)
+                image_files[filename] = full_path
 
         if not image_files:
             self.logger.warning(f"No images found in the specified folder path: {image_path}."
                                 " Please check the folder path and ensure it contains images in supported formats.")
             return None
-
-        images = {}
-        for img_path in image_files:
-            img_name = os.path.basename(img_path)
-            images[img_name] = img_path
-        return images
+        return image_files
 
     def decode_images(self, image_path: str):
         images = self._fetch_images(image_path)
@@ -149,18 +146,20 @@ class DataMatrixDecoder:
             return
 
         decodes = {}
-        self.logger.info(f"\n{':'* 10 } Found {len(images)} images to decode {':'* 10 }")
+        self.logger.info(f"{':'* 10 } Found {len(images)} images to decode {':'* 10 }")
         
-        self.logger.info(f"\n{'='* 60 }") 
+        self.logger.info(f"{'='* 60 }") 
         for img_name, img_path in images.items():
             self.logger.info(f"Decoding image: {img_name}")
             decoded_data = self._get_datamatrix_data(img_path, img_name)
             if decoded_data:
                 self.logger.info(f"Decoded DataMatrix of {img_name} successfully.")
                 decodes[img_name] = decoded_data
-        self.logger.info(f"\n{'='* 60 }") 
-        
-        self.logger.info(f"\n{'*'* 25 } RESULTS {'*'* 25 }\n")
+            elif decoded_data is None:
+                decodes[img_name] = "DataMatrix out of focus or not found"
+                
+        self.logger.info(f"{'='* 60 }") 
         rows = list(decodes.items())
-        self.logger.info(tabulate(rows, headers=["Filename", "Decoded Data"], tablefmt="grid"))
-        self.logger.info(f"\n{'*'* 60}")
+        self.logger.info(f"\n\n{'*'* 45 } RESULTS {'*'* 45 }"
+                        f"\n\n{tabulate(rows, headers=['Filename', 'Decoded Data'], tablefmt='grid')}"
+                        f"\n\n{'*'* 45 } END {'*'* 45 }")
