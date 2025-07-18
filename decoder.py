@@ -8,7 +8,7 @@ from pylibdmtx import pylibdmtx
 from tabulate import tabulate
 
 class DataMatrixDecoder:
-    def __init__(self, machine_type: str, enable_cv_show: bool = True, morphology_kernel_size: tuple = (3, 3),
+    def __init__(self, machine_name: str, enable_cv_show: bool = True, morphology_kernel_size: tuple = (3, 3),
                  gaussian_blur_kernel_size: tuple = (7, 7), gaussian_blur_sigma: int = 5,
                  threshold_value: int = 0, threshold_max_value: int = 255,
                  cv_show_wait_time: int = 500):
@@ -37,7 +37,7 @@ class DataMatrixDecoder:
                                         "right": 800
                                     }
                         }
-        self.machine_type = machine_type.lower()
+        self.machine_name = machine_name.lower()
 
         self.gaussian_blur_kernel_size = gaussian_blur_kernel_size
         self.gaussian_blur_sigma = gaussian_blur_sigma
@@ -46,8 +46,8 @@ class DataMatrixDecoder:
         self.threshold_max_value = threshold_max_value
 
         self.cv_show_wait_time = cv_show_wait_time
-        if self.machine_type not in self.crop_size:
-            raise ValueError(f"Unsupported machine type: {self.machine_type}. Supported types are: {list(self.crop_size.keys())}.")
+        if self.machine_name not in self.crop_size:
+            raise ValueError(f"Unsupported machine type: {self.machine_name}. Supported types are: {list(self.crop_size.keys())}.")
 
     def _setup_logger(self):
         logger = getLogger("DecoderLogger")
@@ -78,7 +78,7 @@ class DataMatrixDecoder:
 
     def _focus_on_datamatrix(self, image: np.ndarray):
         resized = cv2.resize(image, (1224, 1024))
-        crop = self.crop_size[self.machine_type]
+        crop = self.crop_size[self.machine_name]
         return resized[crop["top"]:crop["bottom"], 
                             crop["left"]:crop["right"]]
 
