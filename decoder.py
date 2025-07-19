@@ -6,6 +6,8 @@ import cv2
 import numpy as np
 from pylibdmtx import pylibdmtx
 from tabulate import tabulate
+from datetime import datetime, timezone
+import csv
 
 class DataMatrixDecoder:
     def __init__(self, machine_name: str, enable_cv_show: bool = True, morphology_kernel_size: tuple = (3, 3),
@@ -149,17 +151,49 @@ class DataMatrixDecoder:
         self.logger.info(f"{':'* 10 } Found {len(images)} images to decode {':'* 10 }")
         
         self.logger.info(f"{'='* 60 }") 
-        for img_name, img_path in images.items():
+        for idx, (img_name, img_path) in enumerate(images.items()):
+            decodes[idx + 1] = {}
+            current_decode = decodes[idx + 1]
             self.logger.info(f"Decoding image: {img_name}")
             decoded_data = self._get_datamatrix_data(img_path, img_name)
+            current_decode["TimeStampIST"] = datetime.now().strftime('%Y-%m-%d %I:%M:%S %p')
             if decoded_data:
                 self.logger.info(f"Decoded DataMatrix of {img_name} successfully.")
-                decodes[img_name] = decoded_data
+                current_decode[img_name] = decoded_data
             elif decoded_data is None:
-                decodes[img_name] = "DataMatrix out of focus or not found"
+                current_decode[img_name] = "DataMatrix out of focus or not found"
                 
-        self.logger.info(f"{'='* 60 }") 
-        rows = list(decodes.items())
-        self.logger.info(f"\n\n{'*'* 45 } RESULTS {'*'* 45 }"
-                        f"\n\n{tabulate(rows, headers=['Filename', 'Decoded Data'], tablefmt='grid')}"
-                        f"\n\n{'*'* 45 } END {'*'* 45 }")
+        self.logger.info(f"{'='*60}") 
+
+        rows = [
+            [sno, data.get('TimeStampIST', ''), list(data.keys())[1], list(data.values())[1]]
+            for sno, data in decodes.items()
+        ]
+
+        self.logger.info(
+            f"\n\n{'*'*45} RESULTS {'*'*45}"
+            f"\n\n{tabulate(rows, headers=['S.No','TimeStampIST' ,'ImageFile', 'DecodedData'], tablefmt='grid')}"
+            f"\n\n{'*'*45} END {'*'*45}"
+        )
+        self.export_report(decodes)
+
+
+    def export_report(self, decodes: dict):
+        timestamp = datetime.now().strftime('%Y-%m-%d %I-%M-%S %p')
+        path = f"reports/{timestamp}.csv"
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        
+        rows = []
+        for sno, data in decodes.items():
+            image_file = list(data.keys())[1]
+            decoded_value = list(data.values())[1]
+            ts = data.get('TimeStampIST', '')
+            rows.append({'S.No': sno, 'TimeStampIST': ts, 'ImageFile': image_file, 'DecodedData': decoded_value})
+
+        is_new_file = not os.path.exists(path)
+        with open(path, "a", newline="") as csvfile:
+            fieldnames = ['S.No', 'TimeStampIST', 'ImageFile', 'DecodedData']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            if is_new_file:
+                writer.writeheader()
+            writer.writerows(rows)

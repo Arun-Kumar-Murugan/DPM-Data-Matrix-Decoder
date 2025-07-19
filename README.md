@@ -10,6 +10,9 @@ A robust Python-based solution for decoding DPM (Direct Part Marking) Data Matri
 - **Batch Processing**: Decode multiple images from a directory simultaneously
 - **Visual Debugging**: Optional image display for preprocessing step visualization
 - **Comprehensive Logging**: Detailed logging with timestamps and processing status
+- **CSV Export Functionality**: Automatic export of results to timestamped CSV files
+- **Timestamp Tracking**: IST (Indian Standard Time) timestamps for each processed image
+- **Report Generation**: Organized reports with serial numbers, timestamps, and results
 - **Flexible Configuration**: Customizable preprocessing parameters
 - **Industrial Grade**: Optimized for low-contrast and challenging lighting conditions
 
@@ -19,8 +22,10 @@ A robust Python-based solution for decoding DPM (Direct Part Marking) Data Matri
 - OpenCV 4.11.0.86
 - NumPy 1.26.1
 - pylibdmtx 0.1.10
-- python-dotenv (for environment variables)
+- python-dotenv 1.0.1 (for environment variables)
 - tabulate (for result formatting)
+
+**Note**: The `csv` and `datetime` modules are part of Python's standard library.
 
 ## 🚀 Installation
 
@@ -61,6 +66,8 @@ DPM-Data-Matrix-Decoder/
 ├── testing.ipynb          # Jupyter notebook for testing and experimentation
 ├── README.md              # This documentation
 ├── LICENSE                # License file
+├── reports/               # Auto-generated CSV reports (created at runtime)
+│   └── YYYY-MM-DD HH-MM-SS AM/PM.csv  # Timestamped report files
 └── dpm_images/            # Sample images organized by machine
     ├── machine_1/         # Images from machine 1
     ├── machine_2/         # Images from machine 2
@@ -140,22 +147,74 @@ The decoder comes pre-configured with optimal settings for three machine types:
 - PNG (.png)
 - JPEG (.jpg, .jpeg)
 
+## 📈 CSV Export & Reporting
+
+### Automatic Report Generation
+The decoder automatically generates detailed CSV reports for every batch processing session:
+
+**Features:**
+- **Timestamped Files**: Each report is saved with a unique timestamp (format: `YYYY-MM-DD HH-MM-SS AM/PM.csv`)
+- **IST Timestamps**: Individual processing timestamps in Indian Standard Time format
+- **Serial Numbering**: Sequential numbering for processed images
+- **Status Tracking**: Clear indication of successful decodes vs. failed attempts
+
+**Report Location:**
+```
+reports/
+├── 2025-07-19 02-45-30 PM.csv
+├── 2025-07-19 03-15-20 PM.csv
+└── 2025-07-19 04-30-15 PM.csv
+```
+
+**Data Structure:**
+| Column | Description | Example |
+|--------|-------------|---------|
+| S.No | Serial number of processed image | 1, 2, 3... |
+| TimeStampIST | Processing timestamp in IST | 2025-07-19 02:45:30 PM |
+| ImageFile | Original image filename | S00001_F1_C1_N001_P165_B1_20250717103204536.jpg |
+| DecodedData | Decoded DataMatrix content or error message | Decoded content or "DataMatrix out of focus or not found" |
+
+### Benefits of CSV Export
+- **Audit Trail**: Complete processing history with timestamps
+- **Data Analysis**: Easy import into Excel, databases, or analysis tools
+- **Quality Monitoring**: Track success rates and identify problematic images
+- **Compliance**: Structured data for regulatory or quality control requirements
+- **Batch Comparison**: Compare results across different processing sessions
+
 ## 📊 Output Format
 
-The decoder provides comprehensive results in a tabulated format:
+The decoder provides comprehensive results in both console and CSV formats:
+
+### Console Output
+The results are displayed in a tabulated format with timestamps:
 
 ```
 ********************************************* RESULTS *********************************************
 
-┌─────────────────────────────────────────────────┬─────────────────────────────────────────┐
-│ Filename                                        │ Decoded Data                            │
-├─────────────────────────────────────────────────┼─────────────────────────────────────────┤
-│ S00001_F1_C1_N001_P165_B1_20250717103204536.jpg│ [Decoded DataMatrix Content]            │
-│ S00003_F1_C3_N001_P165_B1_20250717103204552.jpg│ [Decoded DataMatrix Content]            │
-│ S00004_F1_C4_N001_P165_B1_20250717103204536.jpg│ DataMatrix out of focus or not found    │
-└─────────────────────────────────────────────────┴─────────────────────────────────────────┘
+┌──────┬─────────────────────┬─────────────────────────────────────────────────┬─────────────────────────────────────────┐
+│ S.No │ TimeStampIST        │ ImageFile                                       │ DecodedData                             │
+├──────┼─────────────────────┼─────────────────────────────────────────────────┼─────────────────────────────────────────┤
+│ 1    │ 2025-07-19 02:45:30 PM │ S00001_F1_C1_N001_P165_B1_20250717103204536.jpg│ [Decoded DataMatrix Content]            │
+│ 2    │ 2025-07-19 02:45:31 PM │ S00003_F1_C3_N001_P165_B1_20250717103204552.jpg│ [Decoded DataMatrix Content]            │
+│ 3    │ 2025-07-19 02:45:32 PM │ S00004_F1_C4_N001_P165_B1_20250717103204536.jpg│ DataMatrix out of focus or not found    │
+└──────┴─────────────────────┴─────────────────────────────────────────────────┴─────────────────────────────────────────┘
 
 ********************************************* END *********************************************
+```
+
+### CSV Export
+Results are automatically exported to CSV files with the following features:
+- **Automatic Timestamping**: Files named with processing timestamp (e.g., `2025-07-19 02-45-30 PM.csv`)
+- **Structured Data**: Organized with S.No, TimeStampIST, ImageFile, and DecodedData columns
+- **Reports Directory**: All CSV files saved in `reports/` directory (auto-created)
+- **IST Timestamps**: Each processed image gets an Indian Standard Time timestamp
+
+**CSV Format:**
+```csv
+S.No,TimeStampIST,ImageFile,DecodedData
+1,2025-07-19 02:45:30 PM,S00001_F1_C1_N001_P165_B1_20250717103204536.jpg,[Decoded DataMatrix Content]
+2,2025-07-19 02:45:31 PM,S00003_F1_C3_N001_P165_B1_20250717103204552.jpg,[Decoded DataMatrix Content]
+3,2025-07-19 02:45:32 PM,S00004_F1_C4_N001_P165_B1_20250717103204536.jpg,DataMatrix out of focus or not found
 ```
 
 ## 🔍 Troubleshooting
@@ -178,12 +237,18 @@ The decoder provides comprehensive results in a tabulated format:
    - Verify pylibdmtx installation
    - Check system compatibility
 
+4. **CSV export issues**
+   - Ensure write permissions in the project directory
+   - Check available disk space
+   - Verify the `reports/` directory can be created
+
 ### Performance Tips
 
 - Use appropriate image resolution (recommended: 1224x1024 after resizing)
 - Ensure good lighting conditions during image capture
 - Clean the DataMatrix surface before imaging
 - Use machine-specific configurations for best results
+- Monitor CSV reports for pattern analysis and quality improvements
 
 ## 🧪 Testing
 
@@ -197,6 +262,14 @@ The notebook provides:
 - Step-by-step preprocessing visualization
 - Parameter tuning capabilities
 - Performance analysis tools
+- CSV export validation and analysis
+
+**Testing CSV Export:**
+After running the decoder, check the `reports/` directory for generated CSV files. You can verify:
+- Timestamp accuracy
+- Data integrity
+- Proper formatting
+- Sequential numbering
 
 ## 🤝 Contributing
 
